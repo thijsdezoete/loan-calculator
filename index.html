@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Seller Finance Calculator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    :root {
+      --primary: #4169e1;
+      --primary-light: #94b4ff;
+      --secondary: #6c757d;
+      --secondary-light: #adb5bd;
+      --text: #333;
+      --background: #fff;
+      --border: #ddd;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI',Tahoma,Verdana,sans-serif; }
+    body { background:var(--background); color:var(--text); padding:20px; max-width:1200px; margin:0 auto; }
+    h1,h2 { text-align:center; margin-bottom:30px; }
+    h1 { font-size:2.5rem; }
+    h2 { font-size:1.8rem; margin-top:40px; }
+    .calculators-wrapper { display:flex; flex-wrap:wrap; gap:40px; justify-content:space-between; }
+    .calculator { flex:1; min-width:500px; border-radius:10px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
+    .calculator-1 { border-top:4px solid var(--primary); }
+    .calculator-2 { border-top:4px solid var(--secondary); }
+    .calculator-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .calculator-title { font-size:1.3rem; text-align:center; font-weight:600; flex:1; }
+    .calculator-1 .calculator-title { color:var(--primary); }
+    .calculator-2 .calculator-title { color:var(--secondary); }
+    .copy-btn { padding:8px 12px; border:none; border-radius:4px; cursor:pointer; font-weight:500; transition:all 0.2s; }
+    .copy-btn-1 { background:var(--primary-light); color:white; }
+    .copy-btn-1:hover { background:var(--primary); }
+    .copy-btn-2 { background:var(--secondary-light); color:white; }
+    .copy-btn-2:hover { background:var(--secondary); }
+    .input-section, .results-section { flex:1; min-width:220px; }
+    .calculator-container { display:flex; flex-wrap:wrap; gap:30px; justify-content:space-between; }
+    .form-group { margin-bottom:20px; }
+    label { display:block; margin-bottom:8px; font-weight:500; }
+    .input-wrapper { display:flex; position:relative; }
+    input { width:100%; padding:12px; border:1px solid var(--border); border-radius:4px; font-size:16px; }
+    input:focus { outline:none; border-color:var(--primary); }
+    .calculator-2 input:focus { border-color:var(--secondary); }
+    .currency-symbol, .percentage-symbol { position:absolute; top:50%; transform:translateY(-50%); padding:0 12px; color:#666; font-weight:500; }
+    .currency-input { padding-left:32px; }
+    .percentage-input { padding-right:32px; }
+    .percentage-symbol { right:0; }
+    .chart-container { position:relative; height:220px; width:100%; }
+    .total-monthly { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+    .total-monthly p { margin:0; font-size:14px; font-weight:500; }
+    .total-monthly .amount { font-size:32px; font-weight:700; }
+    .results-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:15px; }
+    .summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-top:30px; }
+    .result-box { background:#f9f9f9; border-radius:8px; padding:20px; text-align:center; box-shadow:0 2px 4px rgba(0,0,0,0.05); }
+    .result-box h3 { font-size:14px; font-weight:500; margin-bottom:10px; color:#555; }
+    .result-box .value { font-size:22px; font-weight:700; }
+    .calculator-1 .result-box .value { color:var(--primary); }
+    .calculator-2 .result-box .value { color:var(--secondary); }
+    .comparison-container { margin-top:60px; text-align:center; }
+    .comparison-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; max-width:800px; margin:40px auto; }
+    .comparison-box { background:#f9f9f9; border-radius:8px; padding:30px; display:flex; flex-direction:column; align-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
+    .comparison-box h3 { font-size:16px; font-weight:500; margin-bottom:15px; color:#555; }
+    .comparison-box .amount { font-size:36px; font-weight:700; }
+    .option-1 .amount { color:var(--primary); }
+    .option-2 .amount { color:var(--secondary); }
+    .comparison-diff { margin-top:30px; padding:20px; background:#f5f9ff; border-radius:8px; display:inline-block; }
+    .comparison-diff h3 { font-size:16px; font-weight:500; margin-bottom:10px; color:#555; }
+    .comparison-diff .amount { font-size:28px; font-weight:700; color:var(--text); }
+    .better { color:#28a745; }
+    .comparison-structure { margin-top:50px; padding:30px; background:#f9f9f9; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
+    .comparison-structure h3 { font-size:20px; font-weight:600; margin-bottom:20px; color:var(--text); }
+    .structure-grid { display:grid; grid-template-columns:1fr; gap:15px; }
+    .structure-item { display:grid; grid-template-columns:1.5fr 1fr 1fr 1.5fr; align-items:center; padding:12px; border-radius:8px; background:white; box-shadow:0 2px 4px rgba(0,0,0,0.05); }
+    .structure-item:nth-child(odd) { background:#f5f9ff; }
+    .structure-label { font-weight:600; color:var(--text); }
+    .structure-value-1 { color:var(--primary); font-weight:500; text-align:center; }
+    .structure-value-2 { color:var(--secondary); font-weight:500; text-align:center; }
+    .structure-diff { text-align:right; font-style:italic; color:#666; }
+    #advanced-container { margin-top:40px; text-align:center; }
+    #copy-notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 5px; z-index: 1000; display: none; }
+
+    /* Interest Rate Button and Modal */
+    .rate-btn-container { text-align: center; margin: 20px 0; }
+    .show-rates-btn { 
+      padding: 10px 20px; 
+      background: #5a8dee; 
+      color: white; 
+      border: none; 
+      border-radius: 4px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s;
+    }
+    .show-rates-btn:hover { background: #4a73c8; }
+    /* Toggle Switch Styles */
+    .switch input { 
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+    input:checked + .slider:before {
+      transform: translateX(30px);
+    }
+    .modal-overlay { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: rgba(0,0,0,0.4); 
+      display: none; 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 1001;
+    }
+    .modal-content { 
+      background: white; 
+      border-radius: 8px; 
+      width: 90%; 
+      max-width: 800px; 
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
+      position: relative;
+    }
+    .modal-header { 
+      padding: 20px; 
+      border-bottom: 1px solid #eee; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+    }
+    .modal-title { 
+      font-size: 1.5rem; 
+      font-weight: 600; 
+      color: var(--text);
+    }
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .refresh-btn:hover {
+      background: #e0e0e0;
+    }
+    .refresh-btn.loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    .refresh-btn svg {
+      transition: transform 0.3s ease;
+    }
+    .refresh-btn.loading svg {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .close-modal { 
+      font-size: 28px; 
+      font-weight: 700; 
+      color: #aaa; 
+      background: none; 
+      border: none; 
+      cursor: pointer;
+    }
+    .close-modal:hover { color: #333; }
+    .modal-body { padding: 20px; }
+    .rates-table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-bottom: 20px;
+    }
+    .rates-table th, .rates-table td { 
+      padding: 12px 15px; 
+      text-align: left; 
+      border-bottom: 1px solid #eee;
+    }
+    .rates-table th { 
+      background: #f5f7fa; 
+      font-weight: 600; 
+      color: #555;
+    }
+    .rates-table tr:last-child td { border-bottom: none; }
+    .rates-table tr:hover { background: #f8f9fa; }
+    .rates-footer { 
+      padding: 15px 20px; 
+      border-top: 1px solid #eee; 
+      display: flex; 
+      justify-content: flex-end; 
+      gap: 10px;
+    }
+    .modal-btn { 
+      padding: 8px 15px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-weight: 500; 
+      transition: all 0.2s;
+      border: none;
+    }
+    .secondary-btn { 
+      background: #e9ecef; 
+      color: #495057;
+    }
+    .secondary-btn:hover { background: #dee2e6; }
+    .primary-btn-1 { 
+      background: var(--primary-light); 
+      color: white;
+    }
+    .primary-btn-1:hover { background: var(--primary); }
+    .primary-btn-2 { 
+      background: var(--secondary-light); 
+      color: white;
+    }
+    .primary-btn-2:hover { background: var(--secondary); }
+    .rates-source { 
+      margin-top: 10px; 
+      font-size: 12px; 
+      color: #666; 
+      text-align: right;
+    }
+    .timestamp { 
+      margin-bottom: 15px; 
+      color: #666; 
+      font-style: italic;
+    }
+    .rate-row { cursor: pointer; }
+    .rate-row.selected { 
+      background: #e8f0fe !important; 
+      border-left: 3px solid var(--primary);
+    }
+    #benchmark-report {
+      background: var(--background);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    #benchmark-report h2,
+    #benchmark-report h3 {
+      font-weight: 600;
+      color: var(--text);
+    }
+    #benchmark-report .comparison-box {
+      background: #f9f9f9;
+    }
+    #benchmark-report .comparison-box.option-1 { border-top: 4px solid var(--primary); }
+    #benchmark-report .comparison-box.option-2 { border-top: 4px solid var(--secondary); }
+    #benchmark-report ul li {
+      margin: 6px 0;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    #benchmark-report table.rates-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #benchmark-report table.rates-table th,
+    #benchmark-report table.rates-table td {
+      padding: 10px;
+      border: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .report-page {
+      /* never let a page break inside this section */
+      page-break-inside: avoid;
+      /* margin for readability */
+      padding-top: 1rem;
+    }
+    
+    /* Force a break before every report-page except the first: */
+    .report-page + .report-page {
+      page-break-before: always;
+    }
+    
+  </style>
+</head>
+<body>
+  <h1>Seller Finance Calculator</h1>
+  
+  <div id="copy-notification">Settings copied successfully!</div>
+
+  <!-- Interest Rate Button -->
+  <div class="rate-btn-container">
+    <button class="show-rates-btn" id="show-rates-btn">Show Current Interest Rates</button>
+    <button id="generate-report-btn" class="show-rates-btn">Download PDF Report</button>
+  </div>
+
+  <div style="text-align:center; margin:30px 0;">
+  </div>
+
+  <div class="calculators-wrapper">
+    <!-- Option 1 -->
+    <div class="calculator calculator-1">
+      <div class="calculator-header">
+        <button class="copy-btn copy-btn-2" id="copy-2-to-1">Copy from Option 2</button>
+        <div class="calculator-title">Option 1</div>
+        <button class="copy-btn copy-btn-1" id="copy-1-to-2">Copy to Option 2</button>
+      </div>
+      <div class="calculator-container">
+        <div class="input-section">
+          <div class="form-group">
+            <label for="property-price-1">Seller Financed Property Price</label>
+            <div class="input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input type="number" id="property-price-1" class="currency-input" value="44250">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="down-payment-1">Buyer Down Payment</label>
+            <div class="input-wrapper" style="margin-bottom:10px;">
+              <span class="currency-symbol">$</span>
+              <input type="number" id="down-payment-1" class="currency-input" value="0">
+            </div>
+            <div class="input-wrapper">
+              <input type="number" id="down-payment-percent-1" class="percentage-input" value="0.00" step="0.01">
+              <span class="percentage-symbol">%</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="interest-rate-1">Interest Rate</label>
+            <div class="input-wrapper">
+              <input type="number" id="interest-rate-1" class="percentage-input" value="6.6" step="0.1">
+              <span class="percentage-symbol">%</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="loan-term-1">Loan Term (years)</label>
+            <input type="number" id="loan-term-1" value="10">
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" id="interest-only-1"> Interest‑only payments</label>
+          </div>
+        </div>
+        <div class="results-section">
+          <div class="chart-container">
+            <canvas id="income-chart-1"></canvas>
+            <div class="total-monthly">
+              <p>Total Monthly Income</p>
+              <div class="amount" id="total-monthly-income-1"></div>
+            </div>
+          </div>
+          <div class="starting-income">
+            <div class="results-grid">
+              <div class="result-box">
+                <h3>Starting Principal Income</h3>
+                <div class="value" id="principal-income-1"></div>
+              </div>
+              <div class="result-box">
+                <h3>Starting Interest Income</h3>
+                <div class="value" id="interest-income-1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="separator"></div>
+      <div class="summary-grid">
+        <div class="result-box">
+          <h3>Loan Amount</h3>
+          <div class="value" id="loan-amount-1"></div>
+        </div>
+        <div class="result-box">
+          <h3>Total Interest Income</h3>
+          <div class="value" id="total-interest-1"></div>
+        </div>
+        <div class="result-box">
+          <h3>Total Income</h3>
+          <div class="value" id="total-income-1"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option 2 -->
+    <div class="calculator calculator-2">
+      <div class="calculator-header">
+        <button class="copy-btn copy-btn-1" id="copy-1-to-2-alt">Copy from Option 1</button>
+        <div class="calculator-title">Option 2</div>
+        <button class="copy-btn copy-btn-2" id="copy-2-to-1-alt">Copy to Option 1</button>
+      </div>
+      <div class="calculator-container">
+        <div class="input-section">
+          <div class="form-group">
+            <label for="property-price-2">Seller Financed Property Price</label>
+            <div class="input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input type="number" id="property-price-2" class="currency-input" value="44250">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="down-payment-2">Buyer Down Payment</label>
+            <div class="input-wrapper" style="margin-bottom:10px;">
+              <span class="currency-symbol">$</span>
+              <input type="number" id="down-payment-2" class="currency-input" value="0">
+            </div>
+            <div class="input-wrapper">
+              <input type="number" id="down-payment-percent-2" class="percentage-input" value="0.00" step="0.01">
+              <span class="percentage-symbol">%</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="interest-rate-2">Interest Rate</label>
+            <div class="input-wrapper">
+              <input type="number" id="interest-rate-2" class="percentage-input" value="6.6" step="0.1">
+              <span class="percentage-symbol">%</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="loan-term-2">Loan Term (years)</label>
+            <input type="number" id="loan-term-2" value="10">
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" id="interest-only-2" checked=checked> Interest‑only payments</label>
+          </div>
+        </div>
+        <div class="results-section">
+          <div class="chart-container">
+            <canvas id="income-chart-2"></canvas>
+            <div class="total-monthly">
+              <p>Total Monthly Income</p>
+              <div class="amount" id="total-monthly-income-2"></div>
+            </div>
+          </div>
+          <div class="starting-income">
+            <div class="results-grid">
+              <div class="result-box">
+                <h3>Starting Principal Income</h3>
+                <div class="value" id="principal-income-2"></div>
+              </div>
+              <div class="result-box">
+                <h3>Starting Interest Income</h3>
+                <div class="value" id="interest-income-2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="separator"></div>
+      <div class="summary-grid">
+        <div class="result-box">
+          <h3>Loan Amount</h3>
+          <div class="value" id="loan-amount-2"></div>
+        </div>
+        <div class="result-box">
+          <h3>Total Interest Income</h3>
+          <div class="value" id="total-interest-2"></div>
+        </div>
+        <div class="result-box">
+          <h3>Total Income</h3>
+          <div class="value" id="total-income-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center; margin-bottom:20px;">
+    <label><input type="checkbox" id="toggle-advanced" checked=checked> Show Advanced Cumulative Chart</label>
+  </div>
+
+  <!-- Advanced Chart -->
+  <div id="advanced-container" style="display:block;">
+    <h2>Advanced Cumulative Chart</h2>
+    <canvas id="advanced-chart"></canvas>
+  </div>
+
+  <!-- Comparison Section -->
+  <div class="comparison-container">
+    <h2>Financing Options Comparison</h2>
+    <div class="comparison-grid">
+      <div class="comparison-box option-1">
+        <h3>Option 1 Monthly Payment</h3>
+        <div class="amount" id="option-1-payment"></div>
+      </div>
+      <div class="comparison-box option-2">
+        <h3>Option 2 Monthly Payment</h3>
+        <div class="amount" id="option-2-payment"></div>
+      </div>
+    </div>
+    <div class="comparison-diff">
+      <h3>Monthly Payment Difference</h3>
+      <div class="amount" id="payment-difference"></div>
+      <div id="better-option"></div>
+    </div>
+    <div class="comparison-structure">
+      <h3>Structural Differences</h3>
+      <div class="structure-grid" id="structure-grid"></div>
+    </div>
+  </div>
+
+  <!-- Interest Rates Modal -->
+  <div class="modal-overlay" id="rates-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Current Interest Rates</div>
+        <div class="modal-actions">
+          <button class="refresh-btn" id="refresh-rates-btn" title="Refresh rates">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/></svg>
+            <span>Refresh</span>
+          </button>
+          <button class="close-modal" id="close-modal">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="timestamp" id="rates-timestamp">Last updated: April 19, 2025</div>
+        <div class="markup-toggle-container" style="margin-bottom: 15px; display: flex; align-items: center;">
+          <label class="toggle-label" for="include-markup" style="margin-right: 10px; font-weight: 500;">
+            Include recommended markup:
+          </label>
+          <label class="switch" style="position: relative; display: inline-block; width: 60px; height: 30px;">
+            <input type="checkbox" id="include-markup" checked>
+            <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 34px; transition: .4s;"></span>
+          </label>
+          <span id="toggle-status" style="margin-left: 10px; font-size: 14px; color: #28a745;">Markup included</span>
+        </div>
+        <p style="margin-bottom: 15px; font-style: italic;">As recommended by financial advisors: "Voor bedrijfsleningen aan particulieren met of zonder onderpand gebruik je meestal Euribor plus een kredietopslag."</p>
+        <table class="rates-table">
+          <thead>
+            <tr>
+              <th>Tenor</th>
+              <th>Euribor Rate (%)</th>
+              <th>Recommended Markup<br>(editable %)</th>
+              <th>Effective Rate (%)</th>
+            </tr>
+          </thead>
+          <tbody id="rates-table-body">
+            <!-- Rates will be populated here -->
+          </tbody>
+        </table>
+        <div class="rates-source">Source: European Money Markets Institute (EMMI) - Official Euribor® rates</div>
+        <div class="rates-doc" style="margin-top: 20px; font-size: 14px; color: #666;">
+          <p>Documentation & Resources:</p>
+          <ul>
+            <li>
+              <a href="https://www.emmi-benchmarks.eu/benchmarks/euribor/methodology/" target="_blank" rel="noopener">
+                EMMI: Euribor® Methodology
+              </a>
+            </li>
+            <li>
+              <a href="https://data.ecb.europa.eu/help/api/overview" target="_blank" rel="noopener">
+                ECB Data Portal API – SDMX RESTful Web Service Overview
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+      <div class="rates-footer">
+        <button class="modal-btn secondary-btn" id="close-modal-btn">Close</button>
+        <button class="modal-btn primary-btn-1" id="apply-to-option-1">Apply to Option 1</button>
+        <button class="modal-btn primary-btn-2" id="apply-to-option-2">Apply to Option 2</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Benchmark Report ===== -->
+  <div id="benchmark-report" class="calculator comparison-container" style="display:none;">
+    <!-- === Page 1: Cover === -->
+    <div class="report-page" id="br-page-cover">
+      <h1>Loan Benchmark Report</h1>
+      <p>Generated on: <span id="report-date"></span></p>
+      <!-- Optional: executive summary or loan summary here -->
+    </div>
+
+    <!-- === Page 2: Executive Summary === -->
+    <div class="report-page" id="br-page-cover">
+      <h1>Executive Summary</h1>
+      <p id="es-overview"></p>
+
+      <h2>1. Structural Changes</h2>
+      <p id="es-structure"></p>
+
+      <h2>2. Cash‑Flow & Income</h2>
+      <ul id="es-cashflow"></ul>
+
+      <h2>3. Comparative Charts</h2>
+      <p id="es-charts"></p>
+
+      <h2>4. Benchmarking & Compliance</h2>
+      <p id="es-benchmark"></p>
+
+      <h2>5. Recommendations</h2>
+      <ol id="es-recs"></ol>
+    </div>
+
+    <!-- === Page 3: Structural Changes === -->
+    <div class="report-page" id="br-page-structure">
+      <!-- we’ll clone in the live .comparison-structure here -->
+      <div id="br-structure-copy"></div>
+    </div>
+
+    <!-- === Page 4: Old vs New === -->
+    <div class="report-page" id="br-page-options">
+      <h2 style="margin-top:0;">Loan Benchmark Report</h2>
+      <div class="comparison-grid">
+        <!-- Option 1 Summary -->
+        <div class="comparison-box option-1" style="padding:20px;">
+          <h3>Old Scenario (Option 1)</h3>
+          <ul style="list-style:none; padding:0; text-align:left;">
+            <li>Loan Amount: <span id="br1-loan-amount"></span></li>
+            <li>Rate: <span id="br1-interest-rate"></span>%</li>
+            <li>Term: <span id="br1-loan-term"></span> yrs</li>
+            <li>Type: <span id="br1-payment-type"></span></li>
+            <li>Monthly: <span id="br1-monthly-payment"></span></li>
+            <li>Total Interest: <span id="br1-total-interest"></span></li>
+          </ul>
+          <div id="br-chart-1" style="max-width:200px; margin:0 auto;"></div>
+        </div>
+  
+        <!-- Option 2 Summary -->
+        <div class="comparison-box option-2" style="padding:20px;">
+          <h3>New Scenario (Option 2)</h3>
+          <ul style="list-style:none; padding:0; text-align:left;">
+            <li>Loan Amount: <span id="br2-loan-amount"></span></li>
+            <li>Rate: <span id="br2-interest-rate"></span>%</li>
+            <li>Term: <span id="br2-loan-term"></span> yrs</li>
+            <li>Type: <span id="br2-payment-type"></span></li>
+            <li>Monthly: <span id="br2-monthly-payment"></span></li>
+            <li>Total Interest: <span id="br2-total-interest"></span></li>
+          </ul>
+          <div id="br-chart-2" style="max-width:200px; margin:0 auto;"></div>
+
+        </div>
+      </div>
+    </div>
+  
+    <!-- === Page 5: Chart === -->
+    <div class="report-page" id="br-page-advanced">
+      <h3 style="margin-top:40px;">Advanced Cumulative Comparison</h3>
+      <div id="br-advanced-chart" style="width: 100%; max-width: 600px;margin: 20px auto;"></div>
+    </div>
+
+    <!-- === Page 6: Guidlines === -->
+    <div class="report-page" id="br-page-rates">
+
+      <h3 style="margin-top:40px;">Euribor + Markup Benchmark</h3>
+      <p style="font-style:italic;">Last updated: <span id="br-timestamp"></span></p>
+      <table class="rates-table" style="margin-bottom:30px;">
+        <thead>
+          <tr>
+            <th>Tenor</th><th>Base (%)</th><th>Markup (%)</th><th>Effective (%)</th>
+          </tr>
+        </thead>
+        <tbody id="br-benchmark-body"></tbody>
+      </table>
+    </div>
+
+    <!-- === Page 7: Documentation === -->
+    <div class="report-page" id="br-page-docs">
+
+      <h3>Documentation & Sources</h3>
+      <p>This report was generated on: <strong><span id="report-date"></span></strong></p>
+      <ul>
+        <li><a href="https://www.emmi-benchmarks.eu/benchmarks/euribor/methodology/">EMMI Euribor® Methodology</a></li>
+        <li><a href="https://data.ecb.europa.eu/help/api/overview">ECB SDMX API Overview</a></li>
+        <li>OECD Transfer Pricing Guidelines: Financial Transactions</li>
+      </ul>
+    </div>
+  </div>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+  <script>
+let selectedTenor = null;
+const tenors = [
+  //{ label: '1 Week',    key: 'EURIBOR1WD_' },
+  { label: '1 Month',   key: 'EURIBOR1MD_' },
+  { label: '3 Months',  key: 'EURIBOR3MD_' },
+  { label: '6 Months',  key: 'EURIBOR6MD_' },
+  { label: '12 Months', key: 'EURIBOR1YD_' }
+];
+window.euriborRates = tenors.map(t => ({
+  tenor:     t.label,
+  rate:      0.0,
+  markup:    0.0,
+  suggested: 0.0
+}));
+    document.addEventListener('DOMContentLoaded', () => {
+      // Globals for charts and calc data
+      let doughnutChart1, doughnutChart2, advancedChart;
+      let calc1 = {}, calc2 = {};
+      let selectedRate = null;
+
+      // Define chart colors directly instead of using CSS variables
+      const colors = {
+        primary: '#4169e1',
+        primaryLight: '#94b4ff',
+        secondary: '#6c757d',
+        secondaryLight: '#adb5bd'
+      };
+
+      // Formatting helpers
+      function formatCurrency(n) { return new Intl.NumberFormat('en-US',{style:'decimal',minimumFractionDigits:2,maximumFractionDigits:2}).format(n); }
+      function formatPercent(n) { return n.toFixed(2) + '%'; }
+
+      // Core financial calculations
+      function calculateMonthlyPayment(P, annualRate, years) {
+        const r = annualRate/100/12, N = years*12;
+        return r===0 ? P/N : P*r*Math.pow(1+r,N)/(Math.pow(1+r,N)-1);
+      }
+      function calculateAmortization(P, annualRate, years, interestOnly) {
+        const r = annualRate/100/12, N = years*12;
+        let m, pi, ii, totInt;
+        if (interestOnly) {
+          ii = P*r; m=ii; pi=0; totInt=ii*N;
+        } else {
+          m = calculateMonthlyPayment(P,annualRate,years);
+          if (r===0) { pi=m; ii=0; totInt=0; }
+          else {
+            ii = P*r;
+            pi = m-ii;
+            totInt = m*N-P;
+          }
+        }
+        return { monthlyPayment:m, principalPayment:pi, interestPayment:ii, totalInterest:totInt };
+      }
+      function calculateSchedule(P, annualRate, years, interestOnly) {
+        const r=annualRate/100/12, N=years*12, sched=[];
+        let balance=P, cumPaid=0;
+        const { monthlyPayment:m } = calculateAmortization(P,annualRate,years,interestOnly);
+        for(let i=1;i<=N;i++){
+          let interest = balance*r;
+          let principal = interestOnly ? 0 : (m-interest);
+          balance = balance - principal;
+          cumPaid += m;
+          sched.push({
+            month: i,
+            totalPaid: cumPaid,
+            remaining: interestOnly ? P : balance < 0 ? 0 : balance
+          });
+        }
+        return sched;
+      }
+
+      // Initialize the two doughnuts
+      function initDoughnuts() {
+        const ctx1 = document.getElementById('income-chart-1');
+        if (ctx1) doughnutChart1 = new Chart(ctx1.getContext('2d'), {
+          type:'doughnut',
+          data:{
+            labels:['Principal','Interest'],
+            datasets:[{ 
+              data:[0,0],
+              backgroundColor:[colors.primaryLight, colors.primary],
+              borderColor:[colors.primaryLight, colors.primary]
+            }]
+          },
+          options:{ cutout:'75%', plugins:{ legend:{display:false} } }
+        });
+
+        const ctx2 = document.getElementById('income-chart-2');
+        if (ctx2) doughnutChart2 = new Chart(ctx2.getContext('2d'), {
+          type:'doughnut',
+          data:{
+            labels:['Principal','Interest'],
+            datasets:[{ 
+              data:[0,0],
+              backgroundColor:[colors.secondaryLight, colors.secondary],
+              borderColor:[colors.secondaryLight, colors.secondary]
+            }]
+          },
+          options:{ cutout:'75%', plugins:{ legend:{display:false} } }
+        });
+      }
+
+      // Initialize the advanced line chart
+      function initAdvancedChart() {
+        const ctx = document.getElementById('advanced-chart');
+        if (!ctx) return;
+        advancedChart = new Chart(ctx.getContext('2d'), {
+          type:'line',
+          data:{ labels:[], datasets:[
+            { label:'Total Paid — Option 1', data:[], borderColor:colors.primary, borderWidth:2, fill:false },
+            { label:'Total Paid — Option 2', data:[], borderColor:colors.secondary, borderWidth:2, fill:false },
+            { label:'Remaining — Option 1', data:[], borderColor:colors.primaryLight, borderDash:[5,5], fill:false },
+            { label:'Remaining — Option 2', data:[], borderColor:colors.secondaryLight, borderDash:[5,5], fill:false },
+          ]},
+          options:{ responsive:true, scales:{
+            x:{ title:{ display:true, text:'Month' } },
+            y:{ title:{ display:true, text:'Amount ($)' } }
+          }}
+        });
+      }
+
+      // Function to copy settings from one option to another
+      function copySettings(from, to) {
+        // Copy all values from one option to another
+        document.getElementById(`property-price-${to}`).value = document.getElementById(`property-price-${from}`).value;
+        document.getElementById(`down-payment-${to}`).value = document.getElementById(`down-payment-${from}`).value;
+        document.getElementById(`down-payment-percent-${to}`).value = document.getElementById(`down-payment-percent-${from}`).value;
+        document.getElementById(`interest-rate-${to}`).value = document.getElementById(`interest-rate-${from}`).value;
+        document.getElementById(`loan-term-${to}`).value = document.getElementById(`loan-term-${from}`).value;
+        document.getElementById(`interest-only-${to}`).checked = document.getElementById(`interest-only-${from}`).checked;
+        
+        // Show notification
+        const notification = document.getElementById('copy-notification');
+        notification.style.display = 'block';
+        setTimeout(() => {
+          notification.style.display = 'none';
+        }, 2000);
+        
+        // Update calculations after copying
+        updateCalc();
+      }
+
+      // Read inputs, compute, update all charts & DOM
+      function updateCalc() {
+        // Gather inputs & compute for both options
+        ['1','2'].forEach(suf => {
+          const P = parseFloat(document.getElementById(`property-price-${suf}`).value)||0;
+          const D = parseFloat(document.getElementById(`down-payment-${suf}`).value)||0;
+          const r = parseFloat(document.getElementById(`interest-rate-${suf}`).value)||0;
+          const t = parseFloat(document.getElementById(`loan-term-${suf}`).value)||0;
+          const io = document.getElementById(`interest-only-${suf}`).checked;
+          const loanAmt = P - D;
+          const res = calculateAmortization(loanAmt,r,t,io);
+          const months = t*12;
+          const totalPaid = res.monthlyPayment * months;
+          const sched = calculateSchedule(loanAmt,r,t,io);
+
+          // Keep percentage in sync when dollar value changes
+          const downPercentEl = document.getElementById(`down-payment-percent-${suf}`);
+          if (document.activeElement !== downPercentEl) {
+            downPercentEl.value = P > 0 ? ((D / P) * 100).toFixed(2) : 0;
+          }
+
+          // Save for comparison
+          window[`calc${suf}`] = {
+            propertyPrice:P, downPayment:D,
+            downPct: P>0?(D/P*100):0,
+            loanAmount:loanAmt,
+            interestRate:r, loanTerm:t,
+            interestOnly:io,
+            monthlyPayment:res.monthlyPayment,
+            principalPayment:res.principalPayment,
+            interestPayment:res.interestPayment,
+            totalInterest:res.totalInterest,
+            totalPaid: totalPaid,
+            schedule:sched
+          };
+
+          // Update DOM values
+          document.getElementById(`loan-amount-${suf}`).textContent = '$'+formatCurrency(loanAmt);
+          document.getElementById(`total-interest-${suf}`).textContent = '$'+formatCurrency(res.totalInterest);
+          document.getElementById(`total-income-${suf}`).textContent = '$'+formatCurrency(totalPaid);
+          document.getElementById(`total-monthly-income-${suf}`).textContent = '$'+formatCurrency(res.monthlyPayment);
+          document.getElementById(`principal-income-${suf}`).textContent = '$'+formatCurrency(res.principalPayment);
+          document.getElementById(`interest-income-${suf}`).textContent = '$'+formatCurrency(res.interestPayment);
+
+          // Update doughnuts
+          const chart = suf==='1'? doughnutChart1 : doughnutChart2;
+          if(chart){
+            chart.data.datasets[0].data = [res.principalPayment, res.interestPayment];
+            chart.update();
+          }
+        });
+
+        // Advanced Chart
+        if (advancedChart) {
+          const sched1 = window.calc1.schedule;
+          const sched2 = window.calc2.schedule;
+          const labels = sched1.map(e=>e.month);
+          advancedChart.data.labels = labels;
+          advancedChart.data.datasets[0].data = sched1.map(e=>e.totalPaid);
+          advancedChart.data.datasets[1].data = sched2.map(e=>e.totalPaid);
+          advancedChart.data.datasets[2].data = sched1.map(e=>e.remaining);
+          advancedChart.data.datasets[3].data = sched2.map(e=>e.remaining);
+          advancedChart.update();
+        }
+
+        updateComparison();
+      }
+
+      // Sync down payment percentage and dollar amount
+      function syncDownPayment(suf, mode) {
+        const propertyPrice = parseFloat(document.getElementById(`property-price-${suf}`).value) || 0;
+        const downPaymentEl = document.getElementById(`down-payment-${suf}`);
+        const downPercentEl = document.getElementById(`down-payment-percent-${suf}`);
+        
+        if (mode === 'percent') {
+          // Percentage was changed, update dollar amount
+          const percent = parseFloat(downPercentEl.value) || 0;
+          downPaymentEl.value = (propertyPrice * percent / 100).toFixed(2);
+        } else {
+          // Dollar amount was changed, update percentage
+          const downPayment = parseFloat(downPaymentEl.value) || 0;
+          if (propertyPrice > 0) {
+            downPercentEl.value = ((downPayment / propertyPrice) * 100).toFixed(2);
+          } else {
+            downPercentEl.value = "0.00";
+          }
+        }
+        
+        updateCalc();
+      }
+
+      // Rebuild comparison grid
+      function updateComparison() {
+        const c1 = window.calc1, c2 = window.calc2;
+        if (!c1 || !c2) return;
+
+        document.getElementById('option-1-payment').textContent = '$'+formatCurrency(c1.monthlyPayment);
+        document.getElementById('option-2-payment').textContent = '$'+formatCurrency(c2.monthlyPayment);
+        const diff = Math.abs(c1.monthlyPayment - c2.monthlyPayment);
+        document.getElementById('payment-difference').textContent = '$'+formatCurrency(diff);
+        const better = c1.monthlyPayment > c2.monthlyPayment
+          ? 'Option 1 provides more monthly income'
+          : c2.monthlyPayment > c1.monthlyPayment
+            ? 'Option 2 provides more monthly income'
+            : 'Both options provide equal monthly income';
+        const bo = document.getElementById('better-option');
+        bo.textContent = `(${better})`;
+        bo.className = 'better';
+
+        const grid = document.getElementById('structure-grid');
+        grid.innerHTML = '';
+        const fields = [
+          {
+            label:'Down Payment',
+            v1:`$${formatCurrency(c1.downPayment)} (${formatPercent(c1.downPct)})`,
+            v2:`$${formatCurrency(c2.downPayment)} (${formatPercent(c2.downPct)})`,
+            diff: c2.downPayment - c1.downPayment,
+            diffText: (d=> d===0?'No difference': d>0?`$${formatCurrency(d)} more in Option 2`:`$${formatCurrency(-d)} more in Option 1`)(c2.downPayment-c1.downPayment)
+          },
+          {
+            label:'Loan Amount',
+            v1:`$${formatCurrency(c1.loanAmount)}`, v2:`$${formatCurrency(c2.loanAmount)}`,
+            diffText:(d=> d===0?'No difference': d>0?`$${formatCurrency(d)} more in Option 2`:`$${formatCurrency(-d)} more in Option 1`)(c2.loanAmount-c1.loanAmount)
+          },
+          {
+            label:'Interest Rate',
+            v1:formatPercent(c1.interestRate), v2:formatPercent(c2.interestRate),
+            diffText:(d=> d===0?'No difference': d>0?`${formatPercent(d)} higher in Option 2`:`${formatPercent(-d)} higher in Option 1`)(c2.interestRate-c1.interestRate)
+          },
+          {
+            label:'Loan Term',
+            v1:`${c1.loanTerm} years`, v2:`${c2.loanTerm} years`,
+            diffText:(d=> d===0?'No difference': d>0?`${d} years longer in Option 2`:`${-d} years longer in Option 1`)(c2.loanTerm-c1.loanTerm)
+          },
+          {
+            label:'Loan Type',
+            v1:c1.interestOnly?'Interest‑Only':'Standard', v2:c2.interestOnly?'Interest‑Only':'Standard',
+            diffText: c1.interestOnly===c2.interestOnly ? 'No difference'
+              : c1.interestOnly ? 'Option 1 is IO, Option 2 amortizes' : 'Option 2 is IO, Option 1 amortizes'
+          },
+          {
+            label:'Principal/Interest Ratio',
+            v1:`$${formatCurrency(c1.principalPayment)}/$${formatCurrency(c1.interestPayment)} (${((c1.principalPayment/c1.monthlyPayment)*100).toFixed(1)}%/${((c1.interestPayment/c1.monthlyPayment)*100).toFixed(1)}%)`,
+            v2:`$${formatCurrency(c2.principalPayment)}/$${formatCurrency(c2.interestPayment)} (${((c2.principalPayment/c2.monthlyPayment)*100).toFixed(1)}%/${((c2.interestPayment/c2.monthlyPayment)*100).toFixed(1)}%)`,
+            diffText: ((p1,i1,p2,i2)=>{
+              const pr1 = p1/(p1+i1), pr2 = p2/(p2+i2);
+              if (Math.abs(pr1-pr2)<0.01) return 'Similar ratios';
+              return pr2>pr1 ? 'More principal portion in Option 2' : 'More principal portion in Option 1';
+            })(c1.principalPayment,c1.interestPayment,c2.principalPayment,c2.interestPayment)
+          },
+          {
+            label:'Total Interest',
+            v1:`$${formatCurrency(c1.totalInterest)}`, v2:`$${formatCurrency(c2.totalInterest)}`,
+            diffText:(d=> d===0?'No difference': d>0?`$${formatCurrency(d)} more in Option 2`:`$${formatCurrency(-d)} more in Option 1`)(c2.totalInterest-c1.totalInterest)
+          },
+          {
+            label:'Total Income',
+            v1:`$${formatCurrency(c1.totalPaid)}`, v2:`$${formatCurrency(c2.totalPaid)}`,
+            diffText:(d=> d===0?'No difference': d>0?`$${formatCurrency(d)} more in Option 2`:`$${formatCurrency(-d)} more in Option 1`)(c2.totalPaid-c1.totalPaid)
+          }
+        ];
+
+        fields.forEach(f => {
+          const item = document.createElement('div');
+          item.className = 'structure-item';
+          item.innerHTML = `
+            <div class="structure-label">${f.label}</div>
+            <div class="structure-value-1">${f.v1}</div>
+            <div class="structure-value-2">${f.v2}</div>
+            <div class="structure-diff">${f.diffText}</div>
+          `;
+          grid.appendChild(item);
+        });
+      }
+
+      
+      function updateMarkupToggle() {
+        const toggleStatus = document.getElementById('toggle-status');
+        const includeMarkup = document.getElementById('include-markup').checked;
+        
+        if (includeMarkup) {
+          toggleStatus.textContent = 'Markup included';
+          toggleStatus.style.color = '#28a745'; // Green
+        } else {
+          toggleStatus.textContent = 'Base rate only';
+          toggleStatus.style.color = '#dc3545'; // Red
+        }
+        
+        // Repopulate the table to reflect the new toggle state
+        populateRatesTable();
+        
+        // Reset selection when toggle changes
+        selectedRate = null;
+        document.querySelectorAll('.rate-row').forEach(r => r.classList.remove('selected'));
+      }
+      
+      function applyRateToOption(option) {
+        if (selectedRate === null) {
+          alert('Please select a rate first.');
+          return;
+        }
+        
+        document.getElementById(`interest-rate-${option}`).value = selectedRate.toFixed(1);
+        updateCalc();
+        closeModal();
+        
+        // Show confirmation notification
+        const notification = document.getElementById('copy-notification');
+        notification.textContent = `Rate applied to Option ${option} successfully!`;
+        notification.style.display = 'block';
+        setTimeout(() => {
+          notification.style.display = 'none';
+          notification.textContent = 'Settings copied successfully!';
+        }, 2000);
+      }
+      
+      function openModal() {
+        document.getElementById('rates-modal').style.display = 'flex';
+        populateRatesTable();
+      }
+      
+      function closeModal() {
+        document.getElementById('rates-modal').style.display = 'none';
+        selectedRate = null;
+      }
+
+      // Setup down payment sync
+      document.getElementById('down-payment-1').addEventListener('input', () => syncDownPayment('1', 'dollar'));
+      document.getElementById('down-payment-percent-1').addEventListener('input', () => syncDownPayment('1', 'percent'));
+      document.getElementById('down-payment-2').addEventListener('input', () => syncDownPayment('2', 'dollar'));
+      document.getElementById('down-payment-percent-2').addEventListener('input', () => syncDownPayment('2', 'percent'));
+
+      // Copy settings button event listeners
+      document.getElementById('copy-1-to-2').addEventListener('click', () => copySettings('1', '2'));
+      document.getElementById('copy-2-to-1').addEventListener('click', () => copySettings('2', '1'));
+      document.getElementById('copy-1-to-2-alt').addEventListener('click', () => copySettings('1', '2'));
+      document.getElementById('copy-2-to-1-alt').addEventListener('click', () => copySettings('2', '1'));
+
+      // Refresh rates function
+      async function refreshRates() {
+        const refreshBtn = document.getElementById('refresh-rates-btn');
+        refreshBtn.classList.add('loading');
+      
+        const proxyBase = 'https://thijs-cors.tdz.workers.dev/?url=';
+        const apiBase   = 'https://sdw-wsrest.ecb.europa.eu/service/data/FM';
+        const params    = '?lastNObservations=1&detail=dataonly&format=jsondata';
+      
+        try {
+          // Fetch all tenors in parallel via proxy, using D.U2 for daily frequency
+          const jsons = await Promise.all(tenors.map(t => {
+            const flowKey  = `M.U2.EUR.RT.MM.${t.key}.HSTA`;
+            const target   = encodeURIComponent(`${apiBase}/${flowKey}${params}`);
+            return fetch(proxyBase + target)
+              .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+              })
+              .catch(() => null); // swallow errors per‑tenor
+          }));
+      
+          // Build new rates, defaulting to zero if fetch failed or returned empty
+          window.euriborRates = tenors.map((t, i) => {
+            let rate = 0.0;
+            const json = jsons[i];
+            if (json && json.dataSets?.[0]?.series) {
+              const seriesObj = json.dataSets[0].series;
+              const key       = Object.keys(seriesObj)[0];
+              const obsObj    = seriesObj[key]?.observations;
+              if (obsObj) {
+                const oKey = Object.keys(obsObj)[0];
+                rate = parseFloat(obsObj[oKey][0]) || 0.0;
+              }
+            }
+            const markupMap = {
+              //'1 Week':  1.50,
+              '1 Month': 1.50,
+              '3 Months':1.25,
+              '6 Months':1.05,
+              '12 Months':1.25
+            };
+            const markup = markupMap[t.label] || 0.0;
+            return {
+              tenor:     t.label,
+              rate,
+              markup,
+              suggested: rate + markup
+            };
+          });
+      
+          // Update timestamp
+          const now = new Date();
+          const opts = { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' };
+          document.getElementById('rates-timestamp').textContent =
+            `Last updated: ${now.toLocaleDateString('en-US', opts)}`;
+      
+          populateRatesTable();
+          populateFullReport();
+      
+        } catch (err) {
+          console.error('Unexpected error in refreshRates()', err);
+          alert('Failed to refresh Euribor rates—see console for details.');
+        } finally {
+          refreshBtn.classList.remove('loading');
+        }
+      }
+
+      
+      // Interest rates modal event listeners
+      document.getElementById('show-rates-btn').addEventListener('click', openModal);
+      document.getElementById('close-modal').addEventListener('click', closeModal);
+      document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+      document.getElementById('apply-to-option-1').addEventListener('click', () => applyRateToOption('1'));
+      document.getElementById('apply-to-option-2').addEventListener('click', () => applyRateToOption('2'));
+      document.getElementById('include-markup').addEventListener('change', updateMarkupToggle);
+      document.getElementById('refresh-rates-btn').addEventListener('click', refreshRates);
+      
+      // Close modal when clicking outside of it
+      document.getElementById('rates-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('rates-modal')) {
+          closeModal();
+        }
+      });
+
+      // Wiring up
+      initDoughnuts();
+      initAdvancedChart();
+      document.querySelectorAll(
+        '#property-price-1,#interest-rate-1,#loan-term-1,#interest-only-1,'+
+        '#property-price-2,#interest-rate-2,#loan-term-2,#interest-only-2'
+      ).forEach(el => el.addEventListener('input', updateCalc));
+      document.getElementById('toggle-advanced')
+        .addEventListener('change', e => {
+          document.getElementById('advanced-container').style.display = e.target.checked ? 'block' : 'none';
+        });
+
+      // Initial render
+      updateCalc();
+
+    function cloneChartToImage(chart, wrapperSel) {
+      const png    = chart.toBase64Image();      // Chart.js v3+: returns PNG data URL
+      const img    = new Image();
+      img.src      = png;
+      img.style.maxWidth = '100%';
+      img.style.display  = 'block';
+    
+      const wrapper = document.querySelector(wrapperSel);
+      wrapper.innerHTML = '';                     // clear out the <canvas> or any children
+      wrapper.appendChild(img);
+    }
+
+    function populateRatesTable() {
+      const tableBody = document.getElementById('rates-table-body');
+      tableBody.innerHTML = '';
+    
+      const includeMarkup = document.getElementById('include-markup').checked;
+    
+      window.euriborRates.forEach((rateData, index) => {
+        const tr = document.createElement('tr');
+        tr.className = 'rate-row';
+        tr.dataset.index = index;
+    
+        // build the editable markup <input>
+        const markupInput = `
+          <input
+            type="number"
+            class="markup-input"
+            data-index="${index}"
+            step="0.01"
+            value="${rateData.markup.toFixed(2)}"
+            style="width:77px;"
+          >
+        `;
+    
+        // compute effective
+        const eff = includeMarkup
+          ? rateData.rate + rateData.markup
+          : rateData.rate;
+        const effective = eff.toFixed(2);
+    
+        tr.innerHTML = `
+          <td>${rateData.tenor}</td>
+          <td>${rateData.rate.toFixed(2)}</td>
+          <td>${markupInput}</td>
+          <td><strong class="effective-cell">${effective}</strong></td>
+        `;
+    
+        // click‑to‑select row
+        tr.addEventListener('click', () => {
+          // clear old selection
+          document.querySelectorAll('.rate-row').forEach(r => r.classList.remove('selected'));
+          tr.classList.add('selected');
+          selectedRate = parseFloat(effective);
+          selectedTenor = rateData.tenor;
+        });
+    
+        tableBody.appendChild(tr);
+      });
+    
+      // wire up markup‑input listeners **after** rows are in DOM
+      document.querySelectorAll('.markup-input').forEach(input => {
+        input.addEventListener('input', e => {
+          const idx = +e.target.dataset.index;
+          const newMarkup = parseFloat(e.target.value) || 0;
+          // update model
+          window.euriborRates[idx].markup = newMarkup;
+          window.euriborRates[idx].suggested = window.euriborRates[idx].rate + newMarkup;
+    
+          // recompute effective
+          const includeMarkup = document.getElementById('include-markup').checked;
+          const newEff = includeMarkup
+            ? window.euriborRates[idx].suggested
+            : window.euriborRates[idx].rate;
+    
+          // update cell
+          const row = e.target.closest('tr');
+          row.querySelector('.effective-cell').textContent = newEff.toFixed(2);
+    
+          // if this row is selected, update selectedRate
+          if (row.classList.contains('selected')) {
+            selectedRate = newEff;
+          }
+        });
+      });
+    
+      // timestamp if not already set by `refreshRates()`
+      const tsEl = document.getElementById('rates-timestamp');
+      if (!tsEl.textContent.includes(':')) {
+        const opts = { year:'numeric', month:'long', day:'numeric' };
+        tsEl.textContent = `Last updated: ${new Date().toLocaleDateString('en-US',opts)}`;
+      }
+    }
+    
+
+
+    function populateExecutiveSummary() {
+      const c1 = window.calc1;
+      const c2 = window.calc2;
+      if (!c1 || !c2) return;
+    
+      // 1. Overview
+      document.getElementById('es-overview').textContent =
+        `This report compares two seller‑financed loan structures on a €${c1.propertyPrice.toLocaleString()} principal over ${c1.loanTerm} years, benchmarked against a ${c2.interestRate.toFixed(2)} % applied rate.`;
+    
+      // 2. Structure
+      document.getElementById('es-structure').textContent =
+        `Option 1 (${c1.interestOnly ? 'Interest‑Only' : 'Amortizing'}) vs Option 2 (${c2.interestOnly ? 'Interest‑Only' : 'Amortizing'}): ` +
+        `Option 1 recovers principal up front, whereas Option 2 defers repayment.`;
+    
+      // 3. Cash‑Flow & Income
+      const cfList = document.getElementById('es-cashflow');
+      cfList.innerHTML = `
+        <li><strong>Option 1:</strong> €${c1.monthlyPayment.toFixed(2)} /mo yields total interest €${c1.totalInterest.toFixed(2)}.</li>
+        <li><strong>Option 2:</strong> €${c2.monthlyPayment.toFixed(2)} /mo yields total interest €${c2.totalInterest.toFixed(2)}.</li>
+      `;
+    
+      // 4. Charts summary
+      document.getElementById('es-charts').textContent =
+        `The doughnut charts show the initial split of principal vs interest payments; ` +
+        `the cumulative line chart tracks total paid and remaining balance over ${c1.loanTerm * 12} months.`;
+    
+      // 5. Benchmark & Compliance
+      const selIdx = window.euriborRates.findIndex(r => r.tenor === selectedTenor);
+      if (selIdx > -1) {
+        const r = window.euriborRates[selIdx];
+        const appliedRate = r.rate + r.markup;
+        if (selectedTenor) {
+          // find the matching tenor in our rates array
+          const r = window.euriborRates.find(x => x.tenor === selectedTenor);
+          if (r) {
+            const appliedRate = r.rate + r.markup;
+            document.getElementById('es-benchmark').textContent =
+              `Applied rate of ${appliedRate.toFixed(2)} % (` +
+              `${r.tenor} Euribor + ${r.markup.toFixed(2)} % markup) ` +
+              `aligns with market norms for secured financing of similar term and risk.`;
+          } else {
+            // fallback if not found
+            document.getElementById('es-benchmark').textContent =
+              `Applied rate of ${selectedRate.toFixed(2)} % aligns with market norms.`;
+          }
+        } else {
+          // no tenor selected yet
+          document.getElementById('es-benchmark').textContent =
+            `Applied rate of ${c2.interestRate.toFixed(2)} % aligns with market norms.`;
+        }
+      }
+
+      // 6. Recommendations
+      const recs = document.getElementById('es-recs');
+      recs.innerHTML = `
+        <li>Adopt ${c2.interestOnly ? 'Option 2' : 'Option 1'} to ${c2.interestOnly
+          ? 'maximize interest income'
+          : 'accelerate principal recovery'}. </li>
+        <li>Continue annual benchmarking of Euribor‑based rates and record each review. </li>
+        <li>Monitor debt‑to‑equity ratios for tax deductibility compliance.</li>
+      `;
+    }
+    
+    function populateFullReport() {
+      console.log("populateFullReport");
+      ['1','2'].forEach(s => {
+        const c = window['calc'+s];
+        document.getElementById(`br${s}-loan-amount`).textContent    = '$'+formatCurrency(c.loanAmount);
+        document.getElementById(`br${s}-interest-rate`).textContent  = c.interestRate.toFixed(2);
+        document.getElementById(`br${s}-loan-term`).textContent      = c.loanTerm;
+        document.getElementById(`br${s}-payment-type`).textContent   = c.interestOnly?'Interest‑Only':'Amortizing';
+        document.getElementById(`br${s}-monthly-payment`).textContent= '$'+formatCurrency(c.monthlyPayment);
+        document.getElementById(`br${s}-total-interest`).textContent = '$'+formatCurrency(c.totalInterest);
+    
+      });
+    
+      // timestamp + benchmark
+      document.getElementById('br-timestamp').textContent = document.getElementById('rates-timestamp').textContent;
+      const body = document.getElementById('br-benchmark-body');
+      cloneChartToImage(doughnutChart1, '#br-chart-1');   // old‑scenario doughnut
+      cloneChartToImage(doughnutChart2, '#br-chart-2');   // new‑scenario doughnut
+      cloneChartToImage(advancedChart,   '#br-advanced-chart'); // cumulative line chart
+      const liveStructure = document.querySelector('.comparison-structure');
+      populateExecutiveSummary();
+      document.getElementById('br-structure-copy').innerHTML = liveStructure.innerHTML;
+      document.getElementById('report-date').textContent = new Date().toLocaleDateString();
+
+      body.innerHTML = '';
+      window.euriborRates.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.tenor}</td>
+          <td>${r.rate.toFixed(2)}</td>
+          <td>${r.markup.toFixed(2)}</td>
+          <td>${(r.suggested).toFixed(2)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+    
+    // 3. Hook up PDF button (html2pdf.js must still be included)
+    document.getElementById('generate-report-btn').addEventListener('click', ()=> {
+        console.log("GENERATING REPORT?");
+      // refresh calc & report
+      updateCalc();
+      populateFullReport();
+    
+      const report = document.getElementById('benchmark-report');
+      report.style.display = 'block';
+      html2pdf().set({
+        margin:0.5, 
+        filename:'Loan_Benchmark_Report.pdf',
+        html2canvas:{ scale:2 }, 
+        jsPDF:{ unit:'in', format:'a4' },
+        pagebreak: {
+          mode:   ['css'],
+        }
+      })
+      .from(report).save()
+      .finally(()=>{ console.log("Finally from html2pdf", ); report.style.display='none'; });
+    });
+    
+    // 4. Launch report view when ready (for debugging)
+    // document.getElementById('benchmark-report').style.display = 'block';
+    populateFullReport();
+    
+
+    // End DOMContent loaded
+    });
+    
+  </script>
+
+</body>
+</html>
